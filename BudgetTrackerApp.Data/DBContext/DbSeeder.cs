@@ -25,8 +25,26 @@ namespace BudgetTrackerApp.Data
                 {
                     new BudgetTransaction
                     {
+                        Description = "Job Salary",
+                        Amount = 45000.00m,
+                        Type = "Income",
+                        Date = new DateTime(2024, 05, 30),
+                        Category = "Salary",
+                    },
+
+                    new BudgetTransaction
+                    {
+                        Description = "House Rent",
+                        Amount = 6500.00m,
+                        Type = "Expense",
+                        Date = new DateTime(2024, 05, 30),
+                        Category = "Rent",
+                    },
+
+                    new BudgetTransaction
+                    {
                         Description = "Tomatoes, Onions, Kale, Cabbages, Carrot and Spinach",
-                        Amount = 150.00m,
+                        Amount = 650.00m,
                         Type = "Expense",
                         Date = new DateTime(2024, 05, 30),
                         Category = "Grocery",

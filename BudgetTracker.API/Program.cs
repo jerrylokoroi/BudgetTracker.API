@@ -1,3 +1,5 @@
+using System.Globalization;
+using System.Text;
 using BudgetTrackerApp.Data;
 using BudgetTrackerApp.Data.Repository;
 using BudgetTrackerApp.Domain.Contracts;
@@ -15,7 +17,17 @@ builder.Services.AddDbContext<BudgetTrackerDbContext>(options =>
 
 // Register the repository
 builder.Services.AddScoped<ITransactionRepository, TransactionRepository>();
-builder.Services.AddScoped<DataSeeder>();
+
+// Add CORS policy
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAllOrigins", builder =>
+    {
+        builder.AllowAnyOrigin()
+               .AllowAnyMethod()
+               .AllowAnyHeader();
+    });
+});
 
 var app = builder.Build();
 
@@ -28,13 +40,8 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-// Seed data
-using (var scope = app.Services.CreateScope())
-{
-    var services = scope.ServiceProvider;
-    var dataSeeder = services.GetRequiredService<DataSeeder>();
-    dataSeeder.Seed();
-}
+// Enable CORS
+app.UseCors("AllowAllOrigins");
 
 // Define the API endpoints
 app.MapGet("/api/transactions", (ITransactionRepository repository) =>
@@ -69,6 +76,7 @@ app.MapPut("/api/transactions/{id}", (int id, BudgetTransaction transaction, ITr
     existingTransaction.Description = transaction.Description;
     existingTransaction.Date = transaction.Date;
     existingTransaction.Category = transaction.Category;
+    existingTransaction.Type = transaction.Type;
 
     repository.Update(existingTransaction);
     return Results.NoContent();
@@ -87,5 +95,22 @@ app.MapDelete("/api/transactions/{id}", (int id, ITransactionRepository reposito
     return Results.NoContent();
 })
 .WithName("DeleteTransaction");
+
+app.MapGet("/api/transactions/export/csv", (ITransactionRepository repository) =>
+{
+    var transactions = repository.GetAll();
+    var csvBuilder = new StringBuilder();
+
+    csvBuilder.AppendLine("Id,Date,Description,Category,Type,Amount");
+
+    foreach (var transaction in transactions)
+    {
+        csvBuilder.AppendLine($"{transaction.Id},{transaction.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)},{transaction.Description},{transaction.Category},{transaction.Type},{transaction.Amount}");
+    }
+
+    var bytes = Encoding.UTF8.GetBytes(csvBuilder.ToString());
+    return Results.File(bytes, "text/csv", "transactions.csv");
+})
+.WithName("ExportTransactionsToCsv");
 
 app.Run();
